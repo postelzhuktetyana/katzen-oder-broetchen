@@ -1,0 +1,22 @@
+# Machine Learning Data & Models (Best Practice: do not commit large datasets or models to git)
+data/
+models/
+*.pkl
+*.pth
+
+# Virtual Environments
+.venv/
+venv/
+env/
+andre_env/
+
+# Python & Jupyter Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
