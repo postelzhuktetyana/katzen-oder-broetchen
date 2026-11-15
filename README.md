@@ -18,10 +18,12 @@
 
 ## 📁 Структура проєкту (Project Structure)
 
-- 📓 [`cat_or_bun_classifier.ipynb`](cat_or_bun_classifier.ipynb): Основний навчальний Jupyter Notebook із детальним 3-компонентним поясненням до кожного блоку коду (Практична мета, ML-концепція, Деталі реалізації в Python/FastAI).
+- 📓 [`cat_or_bun_classifier.ipynb`](cat_or_bun_classifier.ipynb): Основний навчальний Jupyter Notebook: завантаження даних, Presizing-аугментація, тонке налаштування ResNet та діагностика помилок.
+- 🧪 [`cat_or_bun_tester.ipynb`](cat_or_bun_tester.ipynb): Інтерактивний ноутбук для тестування навченої моделі: завантаження `models/cat_or_bun_model.pkl`, вибір зображень через інтерактивний файловий браузер, drag-and-drop віджет завантаження з комп'ютера та візуалізація Softmax-розподілу ймовірностей.
 - 📋 [`DESIGN.md`](DESIGN.md): Повний оновлений технічний дизайн-документ проекту.
 - 📦 [`requirements.txt`](requirements.txt): Залежності для локального віртуального середовища (із сумісністю `ipywidgets` та `bing-image-downloader`).
 - 📂 `data/cats_and_buns/`: Каталог із завантаженими зображеннями (`cat/` та `bun/`), створюється автоматично.
+- 📂 `testing_images/`: Каталог із зовнішніми тестовими зображеннями для перевірки узагальнення моделі (`katzebroetchen.jpg`).
 - 📂 `models/`: Каталог для збереження експортованої навченої моделі `cat_or_bun_model.pkl`.
 
 ---

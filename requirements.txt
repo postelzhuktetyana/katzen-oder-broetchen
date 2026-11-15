@@ -1,6 +1,9 @@
-fastai>=2.7.14
+# Requires Python 3.13 (matches Google Colab runtime)
+fastai>=2.8.12
 torch>=2.0.0
 torchvision>=0.15.0
+numpy>=2.0.0
+plum-dispatch==2.9.0
 bing-image-downloader>=1.1.2
 duckduckgo_search>=6.0.0
 pillow>=9.0.0
