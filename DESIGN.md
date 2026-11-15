@@ -137,16 +137,16 @@ Every code cell is preceded by an educational Markdown cell following the agreed
 
 ### Cell 6: Presizing & Data Augmentation Inspection
 * **Goal**: Verify batch augmentation visually.
-* **ML Concept**: Fastbook Presizing (CPU `Resize(460)` + GPU `aug_transforms(224)`) in single interpolation pass.
+* **ML Concept**: Fastbook Presizing (CPU `Resize(256)` + GPU/CPU `aug_transforms(224)`) in single interpolation pass with lean memory profile.
 * **Implementation**: `dls.show_batch(max_n=8, nrows=2)`.
 
 ### Cell 7: Vision Learner Initialization
-* **Goal**: Initialize ResNet-34 backbone with custom classification head.
-* **ML Concept**: Transfer Learning, ImageNet feature reuse, error rate metric.
-* **Implementation**: `vision_learner(dls, resnet34, metrics=error_rate)`.
+* **Goal**: Initialize ResNet-18 backbone with custom classification head and memory guardrails.
+* **ML Concept**: Transfer Learning, ImageNet feature reuse, parameter efficiency (ResNet-18 vs. ResNet-34 on CPU), active circuit-breaker callback.
+* **Implementation**: `vision_learner(dls, resnet18, metrics=error_rate, cbs=[MemoryGuardCallback(min_available_pct=15.0)])`.
 
 ### Cell 8: Model Training (Fine-Tuning)
-* **Goal**: Execute two-stage fine-tuning.
+* **Goal**: Execute two-stage fine-tuning with memory-guarded execution.
 * **ML Concept**: Freezing vs. unfreezing, discriminative learning rates, 1cycle cosine annealing.
 * **Implementation**: `learn.fine_tune(epochs=3, base_lr=2e-3)`.
 

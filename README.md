@@ -1,11 +1,17 @@
 # Katzen oder Brötchen (Кіт чи булочка?)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/postelzhuktetyana/katzen-oder-broetchen/blob/main/cat_or_bun_classifier.ipynb)
+[![Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/kernels/welcome?src=https://github.com/postelzhuktetyana/katzen-oder-broetchen/blob/main/cat_or_bun_classifier.ipynb)
+
 1. **Курсова робота**: Класифікатор зображень "Кіт чи булочка?".
 2. **Методологія**: Побудовано на базі навчального курсу [Fast.AI](https://course.fast.ai/) (синтез уроку Jeremy Howard *"Is it a bird? Creating a model from your own data"* та розділів *Fastbook Ch. 1 & 2*).
 3. **Особливості**:
+   - **Адаптивний профіль обчислень (Cloud GPU vs. Local CPU)**:
+     - 🚀 **Google Colab / Kaggle (GPU)**: Автоматично задіює прискорювач NVIDIA T4, архітектуру **ResNet-34**, розмір батчу `bs=32`. Навчання займає **~15 секунд**.
+     - 💻 **Локальний CPU (ноутбуки з 8 ГБ RAM)**: Автоматично перемикається на ультралегкий профіль **ResNet-18**, `bs=8`, однопотокове завантаження та активний колбек `MemoryGuardCallback`, що запобігає зависанню ОС.
    - **Небінарна класифікація**: Відображення нормалізованого розподілу ймовірностей (**Softmax**) для кожної категорії (наприклад, `84.2% Cat, 15.8% Bun`) з візуалізацією горизонтальної стовпчикової діаграми замість спрощеного "так/ні".
    - **Надійний веб-пошук зображень**: Пошук через асинхронний Bing image endpoint із браузерними заголовками (та резервним DDGS), що не потребує API-ключів та виключає помилки лімітів (HTTP 202 Ratelimit).
-   - **Розумне кешування (Smart Caching)**: Автоматичний пропуск повторного завантаження, якщо папка вже містить $\ge 80$ зображень (із тумблером `force_redownload = False` для примусового перезавантаження).
+   - **Розумне кешування (Smart Caching)**: Автоматичний пропуск повторного завантаження, якщо папка вже містить $\ge 120$ зображень (із тумблером `force_redownload = False`).
    - **Криптографічна дедуплікація (SHA-256)**: Перевірка хеш-сум файлів, що гарантує відсутність однакових зображень у вибірці.
 
 ---
