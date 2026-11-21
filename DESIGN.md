@@ -1,7 +1,7 @@
 # Technical Design Document: Cat or Bun Image Classifier
 **Project**: *Katzen oder Brötchen* (Coursework Image Classifier)  
-**Methodology**: FastAI Multi-Class Probability Workflow (synthesizing *Is it a bird?*, *Fastbook Ch. 1 & 2*)  
-**Status**: Ready for Execution / Updated with Resilient Scraper & Content Hashing  
+**Methodology**: FastAI Multi-Label Independent Sigmoid Workflow (synthesizing *Is it a bird?*, *Fastbook Ch. 1 & 2*)  
+**Status**: Updated for Independent Category Scoring (`MultiCategoryBlock` + `other/` Negatives + Clean Retrain)  
 
 ---
 
@@ -10,7 +10,7 @@
 The objective of this project is to develop an educational, end-to-end computer vision notebook that classifies images into two visually confusing classes: **Cats** (especially curled up in a "cat loaf" pose) and **Buns** (cinnamon rolls, bread rolls, brioche).
 
 Crucially:
-1. **Multi-Class Probability Distribution**: The classifier is not treated as a binary Yes/No flag. For any input image, it computes and displays the normalized Softmax probability distribution across all categories (e.g., `84.0% Cat, 16.0% Bun`), visualized via formatted dictionary outputs and an intuitive horizontal probability bar chart.
+1. **Independent Multi-Label Probabilities (Sigmoid + `other/` Negatives)**: Rather than a binary flag or a closed-world Softmax (`Cat + Bun = 100%`), the model uses `MultiCategoryBlock` (`BCEWithLogitsLossFlat` + independent **Sigmoid** per class) and includes an `other/` negative class (`[]` target: dogs, plush toys, cars, croissants/bread). Each category is scored independently in `[0%, 100%]` against a `50%` decision threshold (`thresh=0.5`), enabling four clear outcomes: `CAT`, `BUN`, `BOTH`, or `NEITHER`.
 2. **Resilient Data Acquisition**: Rather than relying exclusively on DuckDuckGo (which is prone to HTTP 202 rate-limiting), the pipeline uses a resilient web scraper powered by Bing image search with browser-like headers (and DDGS fallback) requiring zero API keys.
 3. **Smart Caching & Idempotence**: A threshold-based caching mechanism (`TARGET_IMAGES_PER_CAT = 80`) with a `force_redownload = False` toggle skips re-downloading if sufficient images already exist locally, enabling fast and safe repeated notebook executions.
 4. **Cryptographic Content Deduplication**: SHA-256 content hashing guarantees that identical image files are never stored or downloaded twice, even if returned under different query URLs.
@@ -30,23 +30,23 @@ flowchart TD
     end
 
     subgraph Data_Pipeline ["2. Data Pipeline (Presizing)"]
-        E --> F["DataBlock Blueprint<br/>ImageBlock -> CategoryBlock"]
-        F --> G["item_tfms: Resize(460)<br/>(CPU: preserve spatial context)"]
+        E --> F["DataBlock Blueprint<br/>ImageBlock -> MultiCategoryBlock<br/>(cat->['cat'], bun->['bun'], other->[])"]
+        F --> G["item_tfms: Resize(460 / 256)<br/>(CPU: preserve spatial context)"]
         G --> H["batch_tfms: aug_transforms(224)<br/>(GPU: affine, flip, lighting)"]
         H --> I["DataLoaders (Train 80% / Valid 20%)"]
     end
 
     subgraph Modeling ["3. Transfer Learning & Training"]
-        I --> J["Pretrained ResNet-34 Backbone"]
-        J --> K["Multi-Class Head + Softmax<br/>CrossEntropyLossFlat"]
+        I --> J["Pretrained ResNet-34 (GPU) / ResNet-18 (CPU)"]
+        J --> K["Multi-Label Head + Independent Sigmoid<br/>BCEWithLogitsLossFlat (thresh=0.5)"]
         K --> L["learn.fine_tune(3)<br/>(Freeze -> Train Head -> Unfreeze -> 1Cycle)"]
     end
 
-    subgraph Diagnostics_Export ["4. Evaluation & Multi-Class Inference"]
-        L --> M["ClassificationInterpretation<br/>plot_confusion_matrix()"]
-        L --> N["Top Losses Analysis<br/>plot_top_losses()"]
-        L --> O["Model Export<br/>learn.export('models/cat_or_bun_model.pkl')"]
-        O --> P["Multi-Category Probability Distribution<br/>dict(zip(vocab, probs)) + Probability Bar Plot"]
+    subgraph Diagnostics_Export ["4. Evaluation, Clean Retrain & Inference"]
+        L --> M["Per-Class 2x2 Confusion Matrices<br/>Precision / Recall at thresh=0.5"]
+        L --> N["Top Losses + ImageClassifierCleaner<br/>Optional Clean & Retrain Loop"]
+        N --> O["Model Export<br/>learn.export('models/cat_or_bun_multilabel_model.pkl')"]
+        O --> P["Independent Sigmoid Probabilities<br/>CAT / BUN / BOTH / NEITHER + 50% Threshold Plot"]
     end
 ```
 
@@ -67,7 +67,8 @@ katzen-oder-broetchen/
 ├── testing_images/                    # External test images for inference validation
 │   └── katzebroetchen.jpg             # User test image
 └── models/
-    └── cat_or_bun_model.pkl           # Exported FastAI Learner bundle
+    ├── cat_or_bun_model.pkl             # Baseline Softmax Learner (preserved for report comparison)
+    └── cat_or_bun_multilabel_model.pkl  # Independent Sigmoid Multi-Label Learner
 ```
 
 ---
@@ -86,10 +87,11 @@ katzen-oder-broetchen/
 * **Smart Caching**: Before making network requests, the pipeline inspects local directories. If a category already contains $\ge 80$ verified images, download queries for that category are safely skipped. A `force_redownload = False` toggle allows intentional cache-clearing when desired.
 * **Content Hash Deduplication**: Search engines often return duplicate images across different URLs. The pipeline calculates the SHA-256 digest of each image's raw byte stream (`hashlib.sha256(chunk)`). Any newly downloaded file whose hash matches an already seen image is automatically deleted, ensuring strict dataset uniqueness.
 
-### 4.3 Multi-Class Probability Modeling (Softmax vs. Binary Threshold)
-* Rather than returning a binary scalar `is_cat: True/False`, the model uses `CategoryBlock` and computes normalized Softmax probabilities across all classes in `learn.dls.vocab` = `['bun', 'cat']`:
-  $$\sigma(z)_i = \frac{e^{z_i}}{\sum_{j=1}^K e^{z_j}}$$
-* Inference renders both a structured dictionary (`{'Cat': '84.2%', 'Bun': '15.8%'}`) and a horizontal bar chart visualizing class confidence.
+### 4.3 Independent Multi-Label Modeling (Sigmoid vs. Softmax)
+* **Why Softmax failed for open-world inputs**: `CategoryBlock` uses Softmax, forcing $P(\text{cat}) + P(\text{bun}) = 100\%$. Any out-of-distribution image (e.g., a dog or car) had to collapse to one class (observed as `100% Cat`).
+* **Independent Sigmoid (`MultiCategoryBlock`)**: Each output neuron $z_i$ passes through an independent Sigmoid $\sigma(z_i) = \frac{1}{1 + e^{-z_i}} \in [0, 1]$ trained with `BCEWithLogitsLossFlat`.
+* **Negative `other/` class (`[]`)**: While ResNet's backbone preserves ImageNet visual features, FastAI replaces the 1,000-class head with a new 2-output head (`bun`, `cat`). Including `other/` images (`dog photo`, `plush toy photo`, `car photo`, `croissant bread photo`) labeled as `[]` teaches the new head to suppress both outputs on non-cat, non-bun images.
+* **Decision Threshold (`thresh=0.5`)**: Yields four natural outcomes — `CAT`, `BUN`, `BOTH (Cat & Bun)`, or `NEITHER (Other / Unknown)` — while still displaying continuous independent percentages.
 
 ### 4.4 Presizing Data Augmentation (Fastbook Ch. 2 Best Practice)
 * `item_tfms = [Resize(460)]`: CPU resize to larger bounding box, keeping aspect ratio.
