@@ -45,6 +45,8 @@
 | 2 | Risk of `other/` polluting ambiguous cat-loaf behavior | Labeling `"cat loaf meme"` as `other` (`[]`) would teach the model that cat-bread hybrids are *neither* cat nor bun, hurting `katzebroetchen.jpg` and curled-up cats. | Excluded `"cat loaf meme"` and `"drawn cats"` from `other/`; used `dogs`, `plush toys`, `cars`, and `croissant/bread` as clean negatives. |
 | 3 | `ClassificationInterpretation` & `error_rate` incompatibility with `MultiCategoryBlock` | FastAI's `error_rate` and `ClassificationInterpretation.plot_confusion_matrix()` assume single-label `CategoryBlock` targets. | Switched metric to `partial(accuracy_multi, thresh=0.5)`, built per-class 2×2 confusion matrices via `learn.get_preds()`, and used `Interpretation.from_learner(learn)` for top losses. |
 | 4 | Lambda `get_y` pickling risk on `learn.export()` | Anonymous `lambda` functions in `DataBlock(get_y=...)` can fail during cross-environment pickle export/load. | Defined a named top-level function `get_multi_labels(img_path)`. |
+| 5 | **Admin / Versioning**: Overwriting `models/cat_or_bun_model.pkl` would erase the Softmax baseline | Reusing the same export filename prevents side-by-side comparison of Softmax vs. Sigmoid in the report & presentation. | Changed new export path to `models/cat_or_bun_multilabel_model.pkl`, keeping `models/cat_or_bun_model.pkl` intact for Session 5 dual-model testing. |
+| 6 | **Admin / Process**: `AGENTS.md` only mentioned technical bugs/model issues, not administrative/workflow issues | Without an explicit rule, workflow/scoping/versioning decisions could be omitted from session logs. | Updated [`AGENTS.md`](../AGENTS.md) Section 1.2 to explicitly require logging technical, modeling, environment, and administrative/workflow issues. |
 
 ---
 
@@ -53,7 +55,7 @@
 - **Files Modified**:
   - [`cat_or_bun_classifier.ipynb`](../cat_or_bun_classifier.ipynb) (28 cells, all code cells AST-validated).
   - [`cat_or_bun_tester.ipynb`](../cat_or_bun_tester.ipynb) (15 cells, all code cells AST-validated).
-  - [`DESIGN.md`](../DESIGN.md), [`README.md`](../README.md), and [`sessions/session_04_summary.md`](session_04_summary.md).
+  - [`DESIGN.md`](../DESIGN.md), [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and [`sessions/session_04_summary.md`](session_04_summary.md).
 - **Not Yet Executed**:
   - Notebook retraining (`other/` image download, `MultiCategoryBlock` fine-tuning, optional cleaning, and exporting `models/cat_or_bun_multilabel_model.pkl`) has not yet been run on Google Colab / local `katzen` kernel.
 - **Model Preservation for Report Comparison**:

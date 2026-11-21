@@ -20,7 +20,7 @@
 ## 📁 Структура проєкту (Project Structure)
 
 - 📓 [`cat_or_bun_classifier.ipynb`](cat_or_bun_classifier.ipynb): Основний навчальний Jupyter Notebook: завантаження даних, Presizing-аугментація, тонке налаштування ResNet та діагностика помилок.
-- 🧪 [`cat_or_bun_tester.ipynb`](cat_or_bun_tester.ipynb): Інтерактивний ноутбук для тестування навченої моделі: завантаження `models/cat_or_bun_model.pkl`, вибір зображень через інтерактивний файловий браузер, drag-and-drop віджет завантаження з комп'ютера та візуалізація незалежних Sigmoid-ймовірностей з порогом `50%`.
+- 🧪 [`cat_or_bun_tester.ipynb`](cat_or_bun_tester.ipynb): Інтерактивний ноутбук для порівняльного тестування двох моделей (`models/cat_or_bun_model.pkl` — базова Softmax-модель та `models/cat_or_bun_multilabel_model.pkl` — незалежна Sigmoid-модель): вибір зображень через інтерактивний файловий браузер, drag-and-drop віджет завантаження з комп'ютера та пліч-о-пліч візуалізація Softmax-впевненості й незалежних Sigmoid-ймовірностей з порогом `50%`.
 - 📋 [`DESIGN.md`](DESIGN.md): Повний оновлений технічний дизайн-документ проекту.
 - 📦 [`requirements.txt`](requirements.txt): Залежності для локального віртуального середовища (із сумісністю `ipywidgets` та `bing-image-downloader`).
 - 📂 `data/cats_and_buns/`: Каталог із завантаженими зображеннями (`cat/`, `bun/` та негативні приклади `other/`), створюється автоматично.
